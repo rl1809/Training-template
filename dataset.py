@@ -5,14 +5,12 @@ from torch.utils.data import Dataset, DataLoader
 
 from preprocessing import EncodeData
 
-PRETRAINED_TOKENIZER = 'vinai/phobert-base'
-tokenizer = AutoTokenizer.from_pretrained(PRETRAINED_TOKENIZER)
 
 def load_file_csv(file_path, mode=None):
     """Load file from file path"""
     dataframe = pd.read_csv(file_path)
-    data = dataframe['data']
-    label = dataframe['label']
+    data = dataframe['content_preprocess'].values
+    label = dataframe['label'].values
     if mode == 'train':
         train_data, val_data, train_label, val_label = train_test_split(data, label, test_size=0.2)
         return (train_data, train_label), (val_data, val_label)
@@ -26,15 +24,17 @@ class MakeDataset(Dataset):
     def __init__(self, data, label, transform=None):
         self.data = data
         self.label = label
-        if transform is not None:
-            self.data, self.label = transform(data, label)
+        self.transform = transform
+        
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, index):
-        sample = self.data[index], self.label[index]
-        return sample
+        sample = (self.data[index], self.label[index])
+        if self.transform is not None:
+            encoded_sample = self.transform(X, y)
+        return X, y
 
 
 def get_data_loader(data, label, transform, batch_size=16):

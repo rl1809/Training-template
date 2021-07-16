@@ -5,15 +5,24 @@ from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from transformers import AutoTokenizer
 
+PRETRAINED_TOKENIZER_PATH = 'vinai/phobert-base'
+
+def choose_tokenizer(tokenize_type):
+    if tokenize_type == 'bert':
+        return AutoTokenizer.from_pretrained(PRETRAINED_TOKENIZER_PATH)
+    return Tokenizer(filters='?')
 
 class EncodeData:
-
-    def __init__(self, tokenizer, label_encoder, tokenize_type=None):
-        self.tokenizer = tokenizer
-        self.label_encoder = label_encoder
-        self.tokenize_text = tokenize_type
-
-
+    """Transform text data to numberical to feed to model"""
+    def __init__(self, tokenize_type=None):
+        self.tokenizer = choose_tokenizer(tokenize_type)
+        self.label_encoder = LabelEncoder()
+        self.tokenize_type = tokenize_type
+    
+    def fit(self, data, label):
+        if self.tokenize_type != 'bert':
+            self.tokenizer.fit_on_texts(data)
+        self.label_encoder.fit(label)
 
     def tokenize_text(self, text):
         if self.tokenize_type == 'bert':
@@ -36,7 +45,9 @@ class EncodeData:
         return encoded_label
 
     def __call__(self, data, label):
-        encode_data = self.en
+        encoded_data = self.tokenize_text(data)
+        encoded_label = self.encode_label([label])[0]
+        return encoded_data, encoded_label
 
 
 
